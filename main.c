@@ -334,11 +334,11 @@ void	draw_3d(t_map *p, int wall, int z)
 	while (i < 1080 && z < 1920)
 	{
 		if (i < (int)(1080 - wall) / 2)
-			my_mlx_pixel_put(&p->img, z, i, 29656);
+			my_mlx_pixel_put(&p->img, z, i, p->cel);
 		else if (i < (int)(((1080 - wall) / 2) + wall))
-			my_mlx_pixel_put(&p->img, z, i, 0xFF0000);
+			my_mlx_pixel_put(&p->img, z, i, 0xFFFFFF);
 		else
-			my_mlx_pixel_put(&p->img, z, i, 10263708);
+			my_mlx_pixel_put(&p->img, z, i, p->floor);
 		i++;
 	}
 	// cel
@@ -559,6 +559,23 @@ int	ft_exit(t_map *p)
 	return (0);
 }
 
+unsigned long ft_rgb(t_map *p, char c)
+{
+	char **str;
+	int r;
+	int g;
+	int b;
+
+	if (c == 'c')
+		str = ft_split(p->c, ',');
+	else
+		str = ft_split(p->f, ',');
+	r = atoi(str[0]);
+	g = atoi(str[1]);
+	b = atoi(str[2]);
+    return ((r & 0xff) << 16) + ((g & 0xff) << 8) + (b & 0xff);
+}
+
 int main(int ac, char **av)
 {
     char **x;
@@ -580,6 +597,8 @@ int main(int ac, char **av)
 				{
 					p->player = ft_player(p);
 					p->map = remove_player(p);
+					p->floor = ft_rgb(p, 'f');
+					p->cel = ft_rgb(p, 'c');
 					p->event[0] = 0;
 					p->event[1] = 0;
 					p->event[2] = 0;

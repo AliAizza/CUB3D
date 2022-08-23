@@ -42,6 +42,8 @@ typedef struct map
     char *f;
     char *c;
     t_player *player;
+    unsigned long cel;
+    unsigned long floor;
     t_data  img;
     int map_height;
     int map_width;
