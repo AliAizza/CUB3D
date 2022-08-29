@@ -325,7 +325,24 @@ void	my_mlx_pixel_put(t_data *data, int x, int y, int color)
 	*(unsigned int*)dst = color;
 }
 
-void	draw_3d(t_map *p, int wall, int z)
+int ft_convert(t_map *p, int x, int y)
+{
+	char *str;
+
+	x %= 50;
+	y %= 50;
+	if (p->dir == 1)
+		str = p->cub.imgs[0].addr + (x * p->cub.imgs[0].line_length + y * (p->cub.imgs[0].bits_per_pixel / 8));
+	if (p->dir == 2)
+		str = p->cub.imgs[1].addr + (x * p->cub.imgs[1].line_length + y * (p->cub.imgs[1].bits_per_pixel / 8));
+	if (p->dir == 3)
+		str = p->cub.imgs[2].addr + (x * p->cub.imgs[2].line_length + y * (p->cub.imgs[2].bits_per_pixel / 8));
+	if (p->dir == 4)
+		str = p->cub.imgs[3].addr + (x * p->cub.imgs[3].line_length + y * (p->cub.imgs[3].bits_per_pixel / 8));
+	return (*(int *)str);
+}
+
+void	draw_3d(t_map *p, int wall, int z, float a, float b)
 {
 	int i;
 	int tmp1;
@@ -336,7 +353,15 @@ void	draw_3d(t_map *p, int wall, int z)
 		if (i < (int)(1080 - wall) / 2)
 			my_mlx_pixel_put(&p->img, z, i, p->cel);
 		else if (i < (int)(((1080 - wall) / 2) + wall))
-			my_mlx_pixel_put(&p->img, z, i, 0xFFFFFF);
+		{
+			//my_mlx_pixel_put(&p->img, z, i, 0xFFFFFF);
+			if (p->dir == 1 || p->dir == 2)
+				p->eh = fmod(b / 50, 1);
+			if (p->dir == 3 || p->dir == 4)
+				p->eh = fmod(a / 50, 1);
+			p->eh *= 50;
+			my_mlx_pixel_put(&p->img, z, i, ft_convert(p, (int)(((i - ((1080 - wall) / 2)) * 50) / wall), p->eh));
+		}
 		else
 			my_mlx_pixel_put(&p->img, z, i, p->floor);
 		i++;
@@ -365,6 +390,18 @@ void	draw_3d(t_map *p, int wall, int z)
 	// }
 }
 
+void	ft_getdir(t_map *p, float a, float b, float xinc, float yinc)
+{
+	if (p->map[(int)((a - 1)/ 50)][(int)b / 50] != '1')
+		p->dir = 1;
+	if (p->map[(int)((a + 1)/ 50)][(int)b / 50] != '1')
+		p->dir = 2;
+	if (p->map[(int)a / 50][(int)((b - 1)/ 50)] != '1')
+		p->dir = 3;
+	if (p->map[(int)a / 50][(int)((b + 1)/ 50)] != '1')
+		p->dir = 4;
+}
+
 void	ft_dda(int x0, int y0, int x1, int y1, t_map *p, int x, int z)
 {
 	int		dx;
@@ -388,7 +425,7 @@ void	ft_dda(int x0, int y0, int x1, int y1, t_map *p, int x, int z)
 	else
 		ab = abs(dy);
 	xinc = dx / (float) ab;
-	yinc = dy / (float) ab;   
+	yinc = dy / (float) ab;
 	// i = 0;
 	a = x0;
 	b = y0;
@@ -402,6 +439,7 @@ void	ft_dda(int x0, int y0, int x1, int y1, t_map *p, int x, int z)
 		p->player->y_distance += yinc;
 		// i++;
 	}
+	ft_getdir(p, a, b, xinc, yinc);
 	p->player->distance_to_wall = sqrt(pow((p->player->x_distance - p->player->x), 2) + pow((p->player->y_distance - p->player->y), 2));
 	c = (p->player->angle * M_PI / 180) - (((p->player->angle + x) * M_PI) / 180);
 	if (c < 0)
@@ -410,7 +448,7 @@ void	ft_dda(int x0, int y0, int x1, int y1, t_map *p, int x, int z)
 		c -= 2 * M_PI;
 	p->player->distance_to_wall = p->player->distance_to_wall * cos(c);
 	wall = (50 * 1080) / p->player->distance_to_wall;
-	draw_3d(p, wall, z);
+	draw_3d(p, wall, z, a, b);
 }
 
 
@@ -580,6 +618,7 @@ int main(int ac, char **av)
 {
     char **x;
 	t_map *p;
+
 	int i = 0;
 	int z;
 
@@ -619,6 +658,15 @@ int main(int ac, char **av)
 					p->wind = mlx_new_window(p->mlx, 1920, 1080, "lol");
 					p->img.img = mlx_new_image(p->mlx, 1920, 1080);
 					p->img.addr = mlx_get_data_addr(p->img.img, &p->img.bits_per_pixel, &p->img.line_length, &p->img.endian);
+					p->cub.imgs = malloc(sizeof(t_data) * 4);
+					p->cub.imgs[0].img = mlx_xpm_file_to_image(p->mlx, "onepiece.xpm", &z, &z);
+					p->cub.imgs[0].addr = mlx_get_data_addr(p->cub.imgs[0].img, &p->cub.imgs[0].bits_per_pixel, &p->cub.imgs[0].line_length, &p->cub.imgs[0].endian);
+					p->cub.imgs[1].img = mlx_xpm_file_to_image(p->mlx, "texture1.xpm", &z, &z);
+					p->cub.imgs[1].addr = mlx_get_data_addr(p->cub.imgs[1].img, &p->cub.imgs[1].bits_per_pixel, &p->cub.imgs[1].line_length, &p->cub.imgs[1].endian);
+					p->cub.imgs[2].img = mlx_xpm_file_to_image(p->mlx, "texture2.xpm", &z, &z);
+					p->cub.imgs[2].addr = mlx_get_data_addr(p->cub.imgs[2].img, &p->cub.imgs[2].bits_per_pixel, &p->cub.imgs[2].line_length, &p->cub.imgs[2].endian);
+					p->cub.imgs[3].img = mlx_xpm_file_to_image(p->mlx, "texture3.xpm", &z, &z);
+					p->cub.imgs[3].addr = mlx_get_data_addr(p->cub.imgs[3].img, &p->cub.imgs[3].bits_per_pixel, &p->cub.imgs[3].line_length, &p->cub.imgs[3].endian);
 					//ft_3d(p);
 					mlx_hook(p->wind, 2, 1L << 0, ft_a, p);
 					mlx_hook(p->wind, 3, 1L << 1, ft_b, p);

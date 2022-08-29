@@ -28,6 +28,12 @@ typedef struct	s_data {
 	int		endian;
 }				t_data;
 
+typedef struct s_pic
+{
+    t_data *imgs;
+}   t_pic;
+
+
 typedef struct map
 {
     int i;
@@ -40,6 +46,7 @@ typedef struct map
     char *we;
     char *ea;
     char *f;
+    t_pic cub;
     char *c;
     t_player *player;
     unsigned long cel;
@@ -49,6 +56,8 @@ typedef struct map
     int map_width;
     int event[6];
     int k;
+    int dir;
+    float eh;
 } t_map;
 
 typedef struct map_int
