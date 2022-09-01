@@ -1,6 +1,6 @@
 src = *.c ./getnext_line/*.c
 CUB3D = CUB3D
-FLAGS =  -lmlx -framework OpenGL -framework AppKit -fsanitize=address -g3
+FLAGS =  -lmlx -framework OpenGL -framework AppKit
 CC = cc
 
 all : CUB3D
